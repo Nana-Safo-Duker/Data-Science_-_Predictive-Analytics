@@ -1,0 +1,321 @@
+---
+title: "Machine Learning Analysis - Position Salaries Dataset"
+author: "Data Science Analysis"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 14, fig.height = 8)
+```
+
+## Introduction
+
+This notebook contains comprehensive machine learning analysis for predicting salaries based on position levels.
+
+### Objectives
+1. Prepare data for machine learning
+2. Implement multiple regression models
+3. Evaluate and compare models
+4. Select the best model for salary prediction
+5. Make predictions for new positions
+
+## Load Libraries and Data
+
+```{r libraries}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(randomForest)
+library(e1071)
+library(caret)
+
+project_root <- dirname(dirname(dirname(getwd())))
+data_path <- file.path(project_root, "data", "raw", "Position_Salaries.csv")
+df <- read_csv(data_path)
+```
+
+## 1. Data Preparation
+
+```{r data-prep}
+# Prepare features and target
+X <- df$Level
+y <- df$Salary
+
+cat("Features shape:", length(X), "\n")
+cat("Target shape:", length(y), "\n")
+
+# Create smoother range for visualization
+X_grid <- seq(min(X), max(X), by = 0.1)
+```
+
+## 2. Linear Regression
+
+```{r linear-regression}
+# Linear Regression
+lm_model <- lm(Salary ~ Level, data = df)
+y_pred_lm <- predict(lm_model, newdata = data.frame(Level = X))
+y_pred_lm_grid <- predict(lm_model, newdata = data.frame(Level = X_grid))
+
+# Metrics
+mse_lm <- mean((y - y_pred_lm)^2)
+rmse_lm <- sqrt(mse_lm)
+mae_lm <- mean(abs(y - y_pred_lm))
+r2_lm <- summary(lm_model)$r.squared
+
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("LINEAR REGRESSION RESULTS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("Mean Squared Error:", format(mse_lm, big.mark = ","), "\n")
+cat("Root Mean Squared Error:", format(rmse_lm, big.mark = ","), "\n")
+cat("Mean Absolute Error:", format(mae_lm, big.mark = ","), "\n")
+cat("R² Score:", r2_lm, "\n")
+
+# Visualization
+p_lm <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(color = "red", size = 3, alpha = 0.7) +
+  geom_line(aes(x = X_grid, y = y_pred_lm_grid), color = "blue", linewidth = 1) +
+  labs(title = "Linear Regression - Salary Prediction", 
+       x = "Position Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+print(p_lm)
+```
+
+## 3. Polynomial Regression
+
+```{r polynomial-regression}
+# Polynomial Regression - Degree 2
+poly_model_2 <- lm(Salary ~ poly(Level, degree = 2, raw = TRUE), data = df)
+y_pred_poly_2 <- predict(poly_model_2, newdata = data.frame(Level = X))
+y_pred_poly_2_grid <- predict(poly_model_2, 
+                               newdata = data.frame(Level = X_grid))
+
+mse_poly_2 <- mean((y - y_pred_poly_2)^2)
+rmse_poly_2 <- sqrt(mse_poly_2)
+mae_poly_2 <- mean(abs(y - y_pred_poly_2))
+r2_poly_2 <- summary(poly_model_2)$r.squared
+
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("POLYNOMIAL REGRESSION (Degree 2) RESULTS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("Mean Squared Error:", format(mse_poly_2, big.mark = ","), "\n")
+cat("Root Mean Squared Error:", format(rmse_poly_2, big.mark = ","), "\n")
+cat("Mean Absolute Error:", format(mae_poly_2, big.mark = ","), "\n")
+cat("R² Score:", r2_poly_2, "\n")
+
+p_poly_2 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(color = "red", size = 3, alpha = 0.7) +
+  geom_line(aes(x = X_grid, y = y_pred_poly_2_grid), color = "blue", linewidth = 1) +
+  labs(title = "Polynomial Regression (Degree 2) - Salary Prediction", 
+       x = "Position Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+print(p_poly_2)
+```
+
+```{r polynomial-regression-3}
+# Polynomial Regression - Degree 3
+poly_model_3 <- lm(Salary ~ poly(Level, degree = 3, raw = TRUE), data = df)
+y_pred_poly_3 <- predict(poly_model_3, newdata = data.frame(Level = X))
+y_pred_poly_3_grid <- predict(poly_model_3, 
+                               newdata = data.frame(Level = X_grid))
+
+mse_poly_3 <- mean((y - y_pred_poly_3)^2)
+rmse_poly_3 <- sqrt(mse_poly_3)
+mae_poly_3 <- mean(abs(y - y_pred_poly_3))
+r2_poly_3 <- summary(poly_model_3)$r.squared
+
+cat("POLYNOMIAL REGRESSION (Degree 3) RESULTS\n")
+cat("R² Score:", r2_poly_3, "\n")
+
+p_poly_3 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(color = "red", size = 3, alpha = 0.7) +
+  geom_line(aes(x = X_grid, y = y_pred_poly_3_grid), color = "blue", linewidth = 1) +
+  labs(title = "Polynomial Regression (Degree 3) - Salary Prediction", 
+       x = "Position Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+print(p_poly_3)
+```
+
+```{r polynomial-regression-4}
+# Polynomial Regression - Degree 4
+poly_model_4 <- lm(Salary ~ poly(Level, degree = 4, raw = TRUE), data = df)
+y_pred_poly_4 <- predict(poly_model_4, newdata = data.frame(Level = X))
+y_pred_poly_4_grid <- predict(poly_model_4, 
+                               newdata = data.frame(Level = X_grid))
+
+mse_poly_4 <- mean((y - y_pred_poly_4)^2)
+rmse_poly_4 <- sqrt(mse_poly_4)
+mae_poly_4 <- mean(abs(y - y_pred_poly_4))
+r2_poly_4 <- summary(poly_model_4)$r.squared
+
+cat("POLYNOMIAL REGRESSION (Degree 4) RESULTS\n")
+cat("R² Score:", r2_poly_4, "\n")
+
+p_poly_4 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(color = "red", size = 3, alpha = 0.7) +
+  geom_line(aes(x = X_grid, y = y_pred_poly_4_grid), color = "blue", linewidth = 1) +
+  labs(title = "Polynomial Regression (Degree 4) - Salary Prediction", 
+       x = "Position Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+print(p_poly_4)
+```
+
+## 4. Random Forest Regression
+
+```{r random-forest}
+# Random Forest Regression
+rf_model <- randomForest(Salary ~ Level, data = df, ntree = 100, 
+                         nodesize = 1, maxnodes = NULL)
+y_pred_rf <- predict(rf_model, newdata = data.frame(Level = X))
+y_pred_rf_grid <- predict(rf_model, newdata = data.frame(Level = X_grid))
+
+mse_rf <- mean((y - y_pred_rf)^2)
+rmse_rf <- sqrt(mse_rf)
+mae_rf <- mean(abs(y - y_pred_rf))
+r2_rf <- cor(y, y_pred_rf)^2
+
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("RANDOM FOREST REGRESSION RESULTS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("Mean Squared Error:", format(mse_rf, big.mark = ","), "\n")
+cat("Root Mean Squared Error:", format(rmse_rf, big.mark = ","), "\n")
+cat("Mean Absolute Error:", format(mae_rf, big.mark = ","), "\n")
+cat("R² Score:", r2_rf, "\n")
+
+p_rf <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(color = "red", size = 3, alpha = 0.7) +
+  geom_line(aes(x = X_grid, y = y_pred_rf_grid), color = "green", linewidth = 1) +
+  labs(title = "Random Forest Regression - Salary Prediction", 
+       x = "Position Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+print(p_rf)
+```
+
+## 5. Support Vector Regression (SVR)
+
+```{r svr}
+# Support Vector Regression (SVR)
+svr_model <- svm(Salary ~ Level, data = df, kernel = "radial", 
+                 cost = 100, gamma = 0.1, epsilon = 0.1)
+y_pred_svr <- predict(svr_model, newdata = data.frame(Level = X))
+y_pred_svr_grid <- predict(svr_model, newdata = data.frame(Level = X_grid))
+
+mse_svr <- mean((y - y_pred_svr)^2)
+rmse_svr <- sqrt(mse_svr)
+mae_svr <- mean(abs(y - y_pred_svr))
+r2_svr <- cor(y, y_pred_svr)^2
+
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("SUPPORT VECTOR REGRESSION (SVR) RESULTS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("Mean Squared Error:", format(mse_svr, big.mark = ","), "\n")
+cat("Root Mean Squared Error:", format(rmse_svr, big.mark = ","), "\n")
+cat("Mean Absolute Error:", format(mae_svr, big.mark = ","), "\n")
+cat("R² Score:", r2_svr, "\n")
+
+p_svr <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(color = "red", size = 3, alpha = 0.7) +
+  geom_line(aes(x = X_grid, y = y_pred_svr_grid), color = "purple", linewidth = 1) +
+  labs(title = "Support Vector Regression (SVR) - Salary Prediction", 
+       x = "Position Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+print(p_svr)
+```
+
+## 6. Model Comparison
+
+```{r model-comparison}
+# Compare all models
+models_comparison <- data.frame(
+  Model = c("Linear Regression", "Polynomial (deg=2)", "Polynomial (deg=3)", 
+            "Polynomial (deg=4)", "Random Forest", "SVR"),
+  MSE = c(mse_lm, mse_poly_2, mse_poly_3, mse_poly_4, mse_rf, mse_svr),
+  RMSE = c(rmse_lm, rmse_poly_2, rmse_poly_3, rmse_poly_4, rmse_rf, rmse_svr),
+  MAE = c(mae_lm, mae_poly_2, mae_poly_3, mae_poly_4, mae_rf, mae_svr),
+  R2_Score = c(r2_lm, r2_poly_2, r2_poly_3, r2_poly_4, r2_rf, r2_svr)
+)
+
+cat("=" , rep("=", 80), "\n", sep = "")
+cat("MODEL COMPARISON\n")
+cat("=" , rep("=", 80), "\n", sep = "")
+print(models_comparison)
+
+# Find best model
+best_model_idx <- which.max(models_comparison$R2_Score)
+best_model <- models_comparison$Model[best_model_idx]
+cat("\nBest Model (based on R² Score):", best_model, "\n")
+cat("R² Score:", models_comparison$R2_Score[best_model_idx], "\n")
+
+# Visualization
+p1 <- ggplot(models_comparison, aes(x = reorder(Model, R2_Score), y = R2_Score)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "R² Score Comparison", x = "Model", y = "R² Score") +
+  theme_minimal()
+
+p2 <- ggplot(models_comparison, aes(x = reorder(Model, RMSE), y = RMSE)) +
+  geom_bar(stat = "identity", fill = "coral", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "RMSE Comparison", x = "Model", y = "RMSE") +
+  theme_minimal()
+
+library(gridExtra)
+grid.arrange(p1, p2, ncol = 2)
+```
+
+## 7. Predictions for New Positions
+
+```{r predictions}
+# Predict salary for new position levels
+new_levels <- data.frame(Level = c(6.5, 7.5, 8.5, 9.5, 11.0))
+
+# Using the best model (Polynomial Regression Degree 4)
+predictions <- predict(poly_model_4, newdata = new_levels)
+
+predictions_df <- data.frame(
+  Level = new_levels$Level,
+  Predicted_Salary = predictions
+)
+
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("PREDICTIONS FOR NEW POSITION LEVELS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+print(predictions_df)
+
+# Visualization
+p_pred <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(color = "red", size = 3, alpha = 0.7, label = "Training Data") +
+  geom_line(aes(x = X_grid, y = y_pred_poly_4_grid), color = "blue", linewidth = 1) +
+  geom_point(data = predictions_df, aes(x = Level, y = Predicted_Salary), 
+             color = "green", size = 5, shape = 8) +
+  labs(title = "Salary Predictions for New Position Levels", 
+       x = "Position Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+print(p_pred)
+
+# Save model and predictions
+model_path <- file.path(project_root, "results", "models", "best_model_poly4.rds")
+dir.create(dirname(model_path), recursive = TRUE, showWarnings = FALSE)
+saveRDS(poly_model_4, model_path)
+
+predictions_path <- file.path(project_root, "results", "predictions.csv")
+write_csv(predictions_df, predictions_path)
+
+cat("\nBest model saved to:", model_path, "\n")
+cat("Predictions saved to:", predictions_path, "\n")
+```
+
+

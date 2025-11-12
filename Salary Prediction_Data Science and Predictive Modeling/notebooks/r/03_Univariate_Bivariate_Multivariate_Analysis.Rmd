@@ -1,0 +1,269 @@
+---
+title: "Univariate, Bivariate, and Multivariate Analysis"
+author: "Data Science Analysis"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 14, fig.height = 10)
+```
+
+## Introduction
+
+This notebook contains comprehensive analysis:
+1. **Univariate Analysis**: Analysis of individual variables
+2. **Bivariate Analysis**: Analysis of relationships between two variables
+3. **Multivariate Analysis**: Analysis of multiple variables together
+
+## Load Libraries and Data
+
+```{r libraries}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(gridExtra)
+library(corrplot)
+
+project_root <- dirname(dirname(dirname(getwd())))
+data_path <- file.path(project_root, "data", "raw", "Position_Salaries.csv")
+df <- read_csv(data_path)
+```
+
+## 1. Univariate Analysis
+
+### Salary Analysis
+
+```{r univariate-salary}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("UNIVARIATE ANALYSIS - SALARY\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+# Multiple visualizations
+p1 <- ggplot(df, aes(x = Salary)) +
+  geom_histogram(bins = 10, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Salary", x = "Salary", y = "Frequency") +
+  theme_minimal()
+
+p2 <- ggplot(df, aes(y = Salary)) +
+  geom_boxplot(fill = "lightcoral", alpha = 0.7) +
+  labs(title = "Box Plot of Salary", y = "Salary") +
+  theme_minimal()
+
+p3 <- ggplot(df, aes(x = "", y = Salary)) +
+  geom_violin(fill = "lightgreen", alpha = 0.7) +
+  labs(title = "Violin Plot of Salary", y = "Salary") +
+  theme_minimal()
+
+p4 <- ggplot(df, aes(x = Salary)) +
+  geom_density(fill = "green", alpha = 0.5, color = "black") +
+  labs(title = "Density Plot of Salary", x = "Salary", y = "Density") +
+  theme_minimal()
+
+p5 <- ggplot(df, aes(sample = Salary)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Q-Q Plot of Salary", x = "Theoretical", y = "Sample") +
+  theme_minimal()
+
+# Summary statistics
+stats_text <- paste0(
+  "Salary Statistics:\n",
+  "Mean: $", format(mean(df$Salary), big.mark = ","), "\n",
+  "Median: $", format(median(df$Salary), big.mark = ","), "\n",
+  "Std Dev: $", format(sd(df$Salary), big.mark = ","), "\n",
+  "Min: $", format(min(df$Salary), big.mark = ","), "\n",
+  "Max: $", format(max(df$Salary), big.mark = ","), "\n",
+  "Range: $", format(diff(range(df$Salary)), big.mark = ","), "\n",
+  "Skewness: ", round(moments::skewness(df$Salary), 4), "\n",
+  "Kurtosis: ", round(moments::kurtosis(df$Salary), 4)
+)
+
+grid.arrange(p1, p2, p3, p4, p5, ncol = 3)
+cat(stats_text)
+```
+
+### Level Analysis
+
+```{r univariate-level}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("UNIVARIATE ANALYSIS - LEVEL\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+p1 <- ggplot(df, aes(x = factor(Level))) +
+  geom_bar(fill = "steelblue", alpha = 0.7, color = "black") +
+  labs(title = "Frequency of Each Level", x = "Level", y = "Frequency") +
+  theme_minimal()
+
+p2 <- ggplot(df, aes(y = Level)) +
+  geom_boxplot(fill = "coral", alpha = 0.7) +
+  labs(title = "Box Plot of Level", y = "Level") +
+  theme_minimal()
+
+p3 <- ggplot(df, aes(x = Level)) +
+  geom_histogram(bins = 10, fill = "coral", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Level", x = "Level", y = "Frequency") +
+  theme_minimal()
+
+p4 <- ggplot(df, aes(x = 1:nrow(df), y = Level)) +
+  geom_line(color = "green", linewidth = 1) +
+  geom_point(size = 3, color = "green") +
+  labs(title = "Level Progression", x = "Index", y = "Level") +
+  theme_minimal()
+
+level_counts <- table(df$Level)
+p5 <- pie(level_counts, labels = names(level_counts), 
+          main = "Distribution of Levels", col = rainbow(length(level_counts)))
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+## 2. Bivariate Analysis
+
+```{r bivariate}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("BIVARIATE ANALYSIS - LEVEL vs SALARY\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+# Scatter plot
+p1 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(size = 4, color = "coral", alpha = 0.7) +
+  labs(title = "Scatter Plot: Level vs Salary", x = "Level", y = "Salary") +
+  theme_minimal()
+
+# Line plot
+p2 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_line(color = "green", linewidth = 1) +
+  geom_point(size = 3, color = "green") +
+  labs(title = "Line Plot: Level vs Salary", x = "Level", y = "Salary") +
+  theme_minimal()
+
+# Regression line
+p3 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(size = 4, color = "purple", alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "red", linewidth = 1) +
+  labs(title = "Scatter Plot with Regression Line", x = "Level", y = "Salary") +
+  theme_minimal()
+
+# Bar chart
+p4 <- ggplot(df, aes(x = factor(Level), y = Salary)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7, color = "black") +
+  labs(title = "Bar Chart: Salary by Level", x = "Level", y = "Salary") +
+  theme_minimal()
+
+# Correlation
+correlation <- cor(df$Level, df$Salary)
+lm_model <- lm(Salary ~ Level, data = df)
+residuals <- residuals(lm_model)
+
+p5 <- ggplot(df, aes(x = Level, y = residuals)) +
+  geom_point(size = 3, color = "orange", alpha = 0.7) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
+  labs(title = "Residual Plot", x = "Level", y = "Residuals") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, p5, ncol = 3)
+
+cat("\nCorrelation Statistics:\n")
+cat("Pearson Correlation:", correlation, "\n")
+cat("R²:", summary(lm_model)$r.squared, "\n")
+```
+
+## 3. Multivariate Analysis
+
+```{r multivariate-prep}
+# Create additional features
+df_analysis <- df %>%
+  mutate(
+    Salary_Category = cut(Salary, 
+                          breaks = c(0, 80000, 150000, 300000, Inf),
+                          labels = c("Low", "Medium", "High", "Very High")),
+    Level_Group = cut(Level,
+                      breaks = c(0, 3, 6, 10),
+                      labels = c("Junior", "Mid", "Senior")),
+    Salary_Growth = c(NA, diff(Salary) / lag(Salary) * 100),
+    Log_Salary = log(Salary),
+    Log_Level = log(Level)
+  )
+```
+
+```{r multivariate-vis}
+# Correlation heatmap
+numeric_cols <- df_analysis %>% 
+  select_if(is.numeric) %>%
+  select(-Salary_Growth)
+
+cor_matrix <- cor(numeric_cols, use = "complete.obs")
+corrplot(cor_matrix, method = "number", type = "upper", 
+         title = "Correlation Heatmap (Multivariate)")
+
+# Salary by Level Group
+level_group_salary <- df_analysis %>%
+  group_by(Level_Group) %>%
+  summarise(Avg_Salary = mean(Salary, na.rm = TRUE))
+
+p1 <- ggplot(level_group_salary, aes(x = Level_Group, y = Avg_Salary)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7, color = "black") +
+  labs(title = "Average Salary by Level Group", x = "Level Group", y = "Average Salary") +
+  theme_minimal()
+
+# Salary Category Distribution
+salary_cat_counts <- df_analysis %>%
+  count(Salary_Category)
+
+p2 <- ggplot(salary_cat_counts, aes(x = "", y = n, fill = Salary_Category)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Salary Category Distribution", fill = "Category") +
+  theme_void()
+
+# Level vs Log Salary
+p3 <- ggplot(df_analysis, aes(x = Level, y = Log_Salary)) +
+  geom_point(size = 4, color = "purple", alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "red", linewidth = 1) +
+  labs(title = "Level vs Log(Salary)", x = "Level", y = "Log(Salary)") +
+  theme_minimal()
+
+# Salary Growth Rate
+p4 <- ggplot(df_analysis %>% filter(!is.na(Salary_Growth)), 
+             aes(x = factor(Level), y = Salary_Growth)) +
+  geom_bar(stat = "identity", fill = "orange", alpha = 0.7, color = "black") +
+  labs(title = "Salary Growth Rate by Level", x = "Level", y = "Growth Rate (%)") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+## Summary
+
+```{r summary}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("ANALYSIS SUMMARY\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+cat("\n1. UNIVARIATE ANALYSIS:\n")
+cat("   - Salary: Mean=$", format(mean(df$Salary), big.mark = ","), 
+    ", Std=$", format(sd(df$Salary), big.mark = ","), "\n", sep = "")
+cat("   - Level: Mean=", mean(df$Level), ", Std=", sd(df$Level), "\n", sep = "")
+
+cat("\n2. BIVARIATE ANALYSIS:\n")
+cat("   - Pearson Correlation:", correlation, "\n")
+cat("   - R²:", summary(lm_model)$r.squared, "\n")
+
+cat("\n3. MULTIVARIATE ANALYSIS:\n")
+cat("   - Level Groups:", table(df_analysis$Level_Group), "\n")
+cat("   - Salary Categories:", table(df_analysis$Salary_Category), "\n")
+
+# Save analysis data
+analysis_path <- file.path(project_root, "data", "processed", "analysis_data.csv")
+write_csv(df_analysis, analysis_path)
+cat("\nAnalysis data saved to:", analysis_path, "\n")
+```
+
+

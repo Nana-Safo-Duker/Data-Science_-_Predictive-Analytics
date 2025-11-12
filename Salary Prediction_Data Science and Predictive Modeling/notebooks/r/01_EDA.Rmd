@@ -1,0 +1,199 @@
+---
+title: "Exploratory Data Analysis (EDA) - Position Salaries Dataset"
+author: "Data Science Analysis"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 12, fig.height = 8)
+```
+
+## Introduction
+
+This notebook contains comprehensive exploratory data analysis of the Position Salaries dataset.
+
+### Objectives
+
+1. Load and inspect the dataset
+2. Understand data structure and types
+3. Identify missing values and outliers
+4. Explore distributions and relationships
+5. Generate visualizations
+6. Prepare data for further analysis
+
+## Load Libraries and Data
+
+```{r libraries}
+# Load necessary libraries
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(knitr)
+library(corrplot)
+
+# Set working directory (adjust path as needed)
+project_root <- dirname(dirname(dirname(getwd())))
+data_path <- file.path(project_root, "data", "raw", "Position_Salaries.csv")
+
+# Load data
+df <- read_csv(data_path)
+```
+
+## Data Overview
+
+```{r data-overview}
+# Display basic information
+cat("Dataset Shape:", dim(df), "\n")
+cat("\nFirst few rows:\n")
+print(head(df, 10))
+
+cat("\nDataset Summary:\n")
+print(summary(df))
+
+cat("\nData Types:\n")
+print(str(df))
+```
+
+## Data Quality Checks
+
+```{r data-quality}
+# Check for missing values
+cat("Missing Values:\n")
+print(colSums(is.na(df)))
+
+cat("\nMissing Values Percentage:\n")
+print(round((colSums(is.na(df)) / nrow(df)) * 100, 2))
+
+# Check for duplicates
+cat("\nDuplicate rows:", sum(duplicated(df)), "\n")
+```
+
+## Statistical Summary
+
+```{r statistical-summary}
+# Statistical summary
+cat("Statistical Summary:\n")
+print(summary(df))
+
+# Additional statistics
+cat("\nSalary Statistics:\n")
+cat("Mean:", mean(df$Salary), "\n")
+cat("Median:", median(df$Salary), "\n")
+cat("Standard Deviation:", sd(df$Salary), "\n")
+cat("Variance:", var(df$Salary), "\n")
+cat("Range:", range(df$Salary), "\n")
+
+cat("\nLevel Statistics:\n")
+cat("Mean:", mean(df$Level), "\n")
+cat("Median:", median(df$Level), "\n")
+cat("Standard Deviation:", sd(df$Level), "\n")
+```
+
+## Visualizations
+
+### Salary Distribution
+
+```{r salary-distribution, fig.height=6}
+# Histogram and Box Plot
+p1 <- ggplot(df, aes(x = Salary)) +
+  geom_histogram(bins = 10, fill = "skyblue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Salary", x = "Salary", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+
+p2 <- ggplot(df, aes(y = Salary)) +
+  geom_boxplot(fill = "lightcoral", alpha = 0.7) +
+  labs(title = "Box Plot of Salary", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+
+library(gridExtra)
+grid.arrange(p1, p2, ncol = 2)
+```
+
+### Level vs Salary
+
+```{r level-vs-salary, fig.height=6}
+# Scatter plot and Line plot
+p3 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(size = 3, color = "coral", alpha = 0.7) +
+  labs(title = "Level vs Salary", x = "Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+
+p4 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_line(color = "green", linewidth = 1) +
+  geom_point(size = 3, color = "green", alpha = 0.7) +
+  labs(title = "Level vs Salary (Line Plot)", x = "Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"))
+
+grid.arrange(p3, p4, ncol = 2)
+```
+
+### Salary by Position
+
+```{r salary-by-position, fig.height=8}
+# Bar chart
+df_sorted <- df %>% arrange(Salary)
+
+ggplot(df_sorted, aes(x = reorder(Position, Salary), y = Salary)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.8) +
+  coord_flip() +
+  labs(title = "Salary by Position", x = "Position", y = "Salary ($)") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, face = "bold")) +
+  geom_text(aes(label = paste0("$", format(Salary, big.mark = ","))), 
+            hjust = -0.1, size = 3)
+```
+
+### Correlation Analysis
+
+```{r correlation}
+# Correlation
+correlation <- cor(df$Level, df$Salary)
+cat("Correlation (Level vs Salary):", correlation, "\n")
+
+# Correlation plot
+corr_matrix <- cor(df[, c("Level", "Salary")])
+corrplot(corr_matrix, method = "number", type = "upper", 
+         title = "Correlation Matrix: Level vs Salary", 
+         mar = c(0, 0, 1, 0))
+```
+
+## Summary
+
+```{r summary}
+cat("=" , rep("=", 50), "\n", sep = "")
+cat("EDA SUMMARY\n")
+cat("=" , rep("=", 50), "\n", sep = "")
+cat("\nDataset Size:", nrow(df), "rows,", ncol(df), "columns\n")
+cat("\nSalary Statistics:\n")
+cat("  Mean: $", format(mean(df$Salary), big.mark = ","), "\n", sep = "")
+cat("  Median: $", format(median(df$Salary), big.mark = ","), "\n", sep = "")
+cat("  Std Dev: $", format(sd(df$Salary), big.mark = ","), "\n", sep = "")
+cat("  Min: $", format(min(df$Salary), big.mark = ","), "\n", sep = "")
+cat("  Max: $", format(max(df$Salary), big.mark = ","), "\n", sep = "")
+
+cat("\nLevel Statistics:\n")
+cat("  Mean:", mean(df$Level), "\n")
+cat("  Median:", median(df$Level), "\n")
+cat("  Min:", min(df$Level), "\n")
+cat("  Max:", max(df$Level), "\n")
+
+cat("\nCorrelation (Level vs Salary):", correlation, "\n")
+
+# Save processed data
+processed_path <- file.path(project_root, "data", "processed", "processed_data.csv")
+write_csv(df, processed_path)
+cat("\nProcessed data saved to:", processed_path, "\n")
+```
+
+

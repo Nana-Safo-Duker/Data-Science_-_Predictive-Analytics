@@ -1,0 +1,219 @@
+---
+title: "Statistical Analysis - Position Salaries Dataset"
+author: "Data Science Analysis"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 12, fig.height = 8)
+```
+
+## Introduction
+
+This notebook contains comprehensive statistical analysis including:
+1. Descriptive Statistics
+2. Inferential Statistics
+3. Exploratory Statistical Analysis
+
+## Load Libraries and Data
+
+```{r libraries}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(corrplot)
+
+project_root <- dirname(dirname(dirname(getwd())))
+data_path <- file.path(project_root, "data", "raw", "Position_Salaries.csv")
+df <- read_csv(data_path)
+```
+
+## 1. Descriptive Statistics
+
+```{r descriptive-salary}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("DESCRIPTIVE STATISTICS - SALARY\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+cat("\nBasic Statistics:\n")
+print(summary(df$Salary))
+
+cat("\nAdditional Statistics:\n")
+cat("Mean: $", format(mean(df$Salary), big.mark = ","), "\n", sep = "")
+cat("Median: $", format(median(df$Salary), big.mark = ","), "\n", sep = "")
+cat("Standard Deviation: $", format(sd(df$Salary), big.mark = ","), "\n", sep = "")
+cat("Variance: $", format(var(df$Salary), big.mark = ","), "\n", sep = "")
+cat("Range: $", format(diff(range(df$Salary)), big.mark = ","), "\n", sep = "")
+
+# Quartiles
+Q1 <- quantile(df$Salary, 0.25)
+Q2 <- quantile(df$Salary, 0.50)
+Q3 <- quantile(df$Salary, 0.75)
+IQR <- Q3 - Q1
+
+cat("\nQuartiles:\n")
+cat("Q1 (25th percentile): $", format(Q1, big.mark = ","), "\n", sep = "")
+cat("Q2 (50th percentile/Median): $", format(Q2, big.mark = ","), "\n", sep = "")
+cat("Q3 (75th percentile): $", format(Q3, big.mark = ","), "\n", sep = "")
+cat("IQR: $", format(IQR, big.mark = ","), "\n", sep = "")
+
+# Skewness and Kurtosis
+library(moments)
+cat("\nShape Statistics:\n")
+cat("Skewness:", skewness(df$Salary), "\n")
+cat("Kurtosis:", kurtosis(df$Salary), "\n")
+```
+
+## 2. Inferential Statistics
+
+```{r normality-tests}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("NORMALITY TESTS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+# Shapiro-Wilk Test
+shapiro_test <- shapiro.test(df$Salary)
+cat("\nShapiro-Wilk Test for Salary:\n")
+cat("  Test Statistic:", shapiro_test$statistic, "\n")
+cat("  p-value:", shapiro_test$p.value, "\n")
+cat("  Result:", ifelse(shapiro_test$p.value > 0.05, 
+                        "Data appears to be normally distributed", 
+                        "Data does NOT appear to be normally distributed"), 
+    " (α=0.05)\n")
+```
+
+```{r correlation-tests}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("CORRELATION TESTS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+# Pearson Correlation
+pearson_test <- cor.test(df$Level, df$Salary, method = "pearson")
+cat("\nPearson Correlation (Level vs Salary):\n")
+cat("  Correlation Coefficient:", pearson_test$estimate, "\n")
+cat("  p-value:", pearson_test$p.value, "\n")
+cat("  Result:", ifelse(pearson_test$p.value < 0.05, 
+                        "Significant correlation", 
+                        "No significant correlation"), 
+    " (α=0.05)\n")
+
+# Spearman Correlation
+spearman_test <- cor.test(df$Level, df$Salary, method = "spearman")
+cat("\nSpearman Correlation (Level vs Salary):\n")
+cat("  Correlation Coefficient:", spearman_test$estimate, "\n")
+cat("  p-value:", spearman_test$p.value, "\n")
+cat("  Result:", ifelse(spearman_test$p.value < 0.05, 
+                        "Significant correlation", 
+                        "No significant correlation"), 
+    " (α=0.05)\n")
+```
+
+```{r t-test}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("ONE-SAMPLE T-TEST\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+hypothesized_mean <- 200000
+t_test <- t.test(df$Salary, mu = hypothesized_mean)
+
+cat("\nHypothesis: Mean salary = $", format(hypothesized_mean, big.mark = ","), "\n", sep = "")
+cat("Sample Mean: $", format(mean(df$Salary), big.mark = ","), "\n", sep = "")
+cat("  t-statistic:", t_test$statistic, "\n")
+cat("  p-value:", t_test$p.value, "\n")
+cat("  Result:", ifelse(t_test$p.value < 0.05, "Reject H0", "Fail to reject H0"), 
+    " (α=0.05)\n")
+cat("  Interpretation: Mean salary is", 
+    ifelse(t_test$p.value < 0.05, "significantly different", "not significantly different"),
+    "from $", format(hypothesized_mean, big.mark = ","), "\n", sep = "")
+```
+
+## 3. Exploratory Statistical Analysis
+
+```{r confidence-intervals}
+confidence_level <- 0.95
+n <- length(df$Salary)
+mean_salary <- mean(df$Salary)
+std_err <- sd(df$Salary) / sqrt(n)
+t_critical <- qt((1 + confidence_level) / 2, df = n - 1)
+ci_lower <- mean_salary - t_critical * std_err
+ci_upper <- mean_salary + t_critical * std_err
+
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("CONFIDENCE INTERVALS\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("\n95% Confidence Interval for Mean Salary:\n")
+cat("  Lower bound: $", format(ci_lower, big.mark = ","), "\n", sep = "")
+cat("  Upper bound: $", format(ci_upper, big.mark = ","), "\n", sep = "")
+cat("  Mean: $", format(mean_salary, big.mark = ","), "\n", sep = "")
+cat("  Margin of Error: $", format((ci_upper - ci_lower) / 2, big.mark = ","), "\n", sep = "")
+```
+
+```{r visualizations}
+# Statistical Summary Visualization
+library(gridExtra)
+
+p1 <- ggplot(df, aes(x = Salary)) +
+  geom_histogram(bins = 10, fill = "skyblue", color = "black", alpha = 0.7) +
+  geom_vline(xintercept = mean(df$Salary), color = "red", linetype = "dashed", linewidth = 1) +
+  geom_vline(xintercept = median(df$Salary), color = "green", linetype = "dashed", linewidth = 1) +
+  labs(title = "Salary Distribution with Mean and Median", x = "Salary", y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold"))
+
+p2 <- ggplot(df, aes(sample = Salary)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Q-Q Plot for Salary (Normality Check)", x = "Theoretical", y = "Sample") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold"))
+
+p3 <- ggplot(df, aes(y = Salary)) +
+  geom_boxplot(fill = "lightcoral", alpha = 0.7) +
+  labs(title = "Box Plot of Salary (Outlier Detection)", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold"))
+
+p4 <- ggplot(df, aes(x = Level, y = Salary)) +
+  geom_point(size = 3, color = "coral", alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "red", linewidth = 1) +
+  labs(title = paste("Level vs Salary (Correlation:", round(pearson_test$estimate, 4), ")"), 
+       x = "Level", y = "Salary") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 12, face = "bold"))
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+## Summary
+
+```{r summary}
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("STATISTICAL ANALYSIS SUMMARY\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("\n1. Descriptive Statistics:\n")
+cat("   - Mean Salary: $", format(mean(df$Salary), big.mark = ","), "\n", sep = "")
+cat("   - Median Salary: $", format(median(df$Salary), big.mark = ","), "\n", sep = "")
+cat("   - Standard Deviation: $", format(sd(df$Salary), big.mark = ","), "\n", sep = "")
+
+cat("\n2. Normality:\n")
+cat("   - Shapiro-Wilk p-value:", shapiro_test$p.value, "\n")
+cat("   - Data is", ifelse(shapiro_test$p.value > 0.05, "normally distributed", 
+                          "not normally distributed"), "\n")
+
+cat("\n3. Correlation:\n")
+cat("   - Pearson Correlation:", pearson_test$estimate, "(p=", pearson_test$p.value, ")\n")
+cat("   - Spearman Correlation:", spearman_test$estimate, "(p=", spearman_test$p.value, ")\n")
+
+cat("\n4. Confidence Interval (95%):\n")
+cat("   - Lower: $", format(ci_lower, big.mark = ","), "\n", sep = "")
+cat("   - Upper: $", format(ci_upper, big.mark = ","), "\n", sep = "")
+```
+
+

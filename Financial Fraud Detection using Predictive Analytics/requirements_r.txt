@@ -1,0 +1,41 @@
+# R Package Requirements
+# Install using: install.packages(c("package1", "package2", ...))
+
+# Core Data Science
+tidyverse==2.0.0
+data.table==1.14.8
+
+# Visualization
+ggplot2==3.4.4
+plotly==4.10.2
+corrplot==0.92
+VIM==6.2.2
+
+# Machine Learning
+caret==6.0.94
+randomForest==4.7.1.1
+xgboost==1.7.5.1
+rpart==4.1.21
+e1071==1.7.13
+
+# Statistical Analysis
+car==3.1.2
+psych==2.3.9
+corrplot==0.92
+
+# Data Processing
+dplyr==1.1.4
+readr==2.1.4
+tidyr==1.3.0
+
+# Model Evaluation
+pROC==1.18.4
+ROCR==1.0.11
+
+# Jupyter
+IRkernel==1.3.2
+
+# Utilities
+VIM==6.2.2
+naniar==1.0.0
+

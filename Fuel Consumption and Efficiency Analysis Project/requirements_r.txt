@@ -1,0 +1,43 @@
+# R Package Requirements
+# Install using: install.packages(c("package1", "package2", ...))
+
+# Data Manipulation
+dplyr
+tidyr
+readr
+data.table
+
+# Visualization
+ggplot2
+plotly
+corrplot
+GGally
+
+# Statistical Analysis
+stats
+car
+psych
+corrgram
+
+# Machine Learning
+caret
+randomForest
+e1071
+glmnet
+xgboost
+rpart
+rpart.plot
+
+# Reporting
+rmarkdown
+knitr
+
+# Additional Utilities
+VIM
+mice
+outliers
+
+
+
+
+

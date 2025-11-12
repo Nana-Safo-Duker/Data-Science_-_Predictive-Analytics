@@ -1,0 +1,110 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.venv
+venv/
+ENV/
+env/
+*.log
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# R
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+*.Rproj
+*.Rproj.user
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+
+# Data
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.h5
+*.hdf5
+data/raw/
+data/processed/
+!data/README.md
+
+# Models
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+outputs/models/*.pkl
+outputs/models/*.pickle
+outputs/models/*.joblib
+!outputs/models/.gitkeep
+
+# Outputs
+outputs/figures/*
+!outputs/figures/.gitkeep
+outputs/reports/*
+!outputs/reports/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/_build/
+*.pdf
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+

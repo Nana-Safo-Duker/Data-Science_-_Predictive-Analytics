@@ -1,0 +1,319 @@
+---
+title: "Machine Learning Analysis: Unicorn Companies"
+author: "Data Science Team"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 12, fig.height = 8)
+
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readr)
+library(caret)
+library(randomForest)
+library(xgboost)
+library(e1071)
+library(VIM)
+library(corrplot)
+library(knitr)
+library(nnet)
+library(gridExtra)
+```
+
+## Objectives
+
+1. Data preprocessing for ML
+2. Feature engineering
+3. Regression models to predict Valuation
+4. Classification models to predict Financial Stage
+5. Model evaluation and comparison
+6. Feature importance analysis
+
+## Load Cleaned Dataset
+
+```{r load-data}
+df <- read_csv("../../data/Unicorn_Companies_cleaned.csv")
+cat("Dataset shape:", nrow(df), "rows,", ncol(df), "columns\n")
+head(df)
+```
+
+## Data Preprocessing
+
+```{r preprocessing}
+# Feature engineering
+df_ml <- df %>%
+  filter(!is.na(Valuation_B))
+
+# Encode categorical variables
+df_ml$Country_encoded <- as.numeric(as.factor(df_ml$Country))
+df_ml$Industry_encoded <- as.numeric(as.factor(df_ml$Industry))
+df_ml$Financial_Stage_encoded <- as.numeric(as.factor(df_ml$`Financial Stage`))
+
+# Select features for modeling
+feature_cols <- c("Total_Raised_B", "Investors Count", "Deal Terms", 
+                  "Portfolio Exits", "Years_to_Unicorn", "Founded_Year",
+                  "Country_encoded", "Industry_encoded")
+
+# Fill missing values with median
+for(col in feature_cols) {
+  df_ml[[col]][is.na(df_ml[[col]])] <- median(df_ml[[col]], na.rm = TRUE)
+}
+
+cat("Final dataset shape:", nrow(df_ml), "rows\n")
+cat("Features:", paste(feature_cols, collapse = ", "), "\n")
+```
+
+## 1. Regression: Predict Valuation
+
+### Prepare Data
+
+```{r regression-prep}
+# Prepare data for regression
+X_reg <- df_ml[, feature_cols]
+y_reg <- df_ml$Valuation_B
+
+# Split data
+set.seed(42)
+train_index <- createDataPartition(y_reg, p = 0.8, list = FALSE)
+X_train_reg <- X_reg[train_index, ]
+X_test_reg <- X_reg[-train_index, ]
+y_train_reg <- y_reg[train_index]
+y_test_reg <- y_reg[-train_index]
+
+cat("Training set size:", nrow(X_train_reg), "\n")
+cat("Test set size:", nrow(X_test_reg), "\n")
+```
+
+### Random Forest Regressor
+
+```{r rf-regressor}
+# Random Forest Regressor
+set.seed(42)
+rf_reg <- randomForest(x = X_train_reg, y = y_train_reg, 
+                       ntree = 100, importance = TRUE)
+
+y_pred_rf <- predict(rf_reg, X_test_reg)
+mse_rf <- mean((y_test_reg - y_pred_rf)^2)
+rmse_rf <- sqrt(mse_rf)
+r2_rf <- cor(y_test_reg, y_pred_rf)^2
+
+cat("Random Forest Regressor:\n")
+cat(sprintf("  MSE: %.4f\n", mse_rf))
+cat(sprintf("  RMSE: %.4f\n", rmse_rf))
+cat(sprintf("  R² Score: %.4f\n", r2_rf))
+```
+
+### XGBoost Regressor
+
+```{r xgb-regressor}
+# XGBoost Regressor
+dtrain <- xgb.DMatrix(data = as.matrix(X_train_reg), label = y_train_reg)
+dtest <- xgb.DMatrix(data = as.matrix(X_test_reg), label = y_test_reg)
+
+set.seed(42)
+xgb_reg <- xgboost(data = dtrain, nrounds = 100, objective = "reg:squarederror",
+                   verbose = 0)
+
+y_pred_xgb <- predict(xgb_reg, dtest)
+mse_xgb <- mean((y_test_reg - y_pred_xgb)^2)
+rmse_xgb <- sqrt(mse_xgb)
+r2_xgb <- cor(y_test_reg, y_pred_xgb)^2
+
+cat("XGBoost Regressor:\n")
+cat(sprintf("  MSE: %.4f\n", mse_xgb))
+cat(sprintf("  RMSE: %.4f\n", rmse_xgb))
+cat(sprintf("  R² Score: %.4f\n", r2_xgb))
+```
+
+### Linear Regression
+
+```{r linear-regression}
+# Linear Regression
+train_data <- data.frame(X_train_reg, Valuation_B = y_train_reg)
+test_data <- data.frame(X_test_reg)
+
+lr_reg <- lm(Valuation_B ~ ., data = train_data)
+y_pred_lr <- predict(lr_reg, test_data)
+
+mse_lr <- mean((y_test_reg - y_pred_lr)^2)
+rmse_lr <- sqrt(mse_lr)
+r2_lr <- cor(y_test_reg, y_pred_lr)^2
+
+cat("Linear Regression:\n")
+cat(sprintf("  MSE: %.4f\n", mse_lr))
+cat(sprintf("  RMSE: %.4f\n", rmse_lr))
+cat(sprintf("  R² Score: %.4f\n", r2_lr))
+```
+
+### Visualize Predictions
+
+```{r regression-visualization}
+# Create visualization
+library(gridExtra)
+
+p1 <- ggplot(data.frame(Actual = y_test_reg, Predicted = y_pred_rf), 
+             aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(title = "Random Forest - Predictions vs Actual",
+       x = "Actual Valuation ($B)", y = "Predicted Valuation ($B)") +
+  theme_minimal()
+
+p2 <- ggplot(data.frame(Actual = y_test_reg, Predicted = y_pred_xgb), 
+             aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(title = "XGBoost - Predictions vs Actual",
+       x = "Actual Valuation ($B)", y = "Predicted Valuation ($B)") +
+  theme_minimal()
+
+p3 <- ggplot(data.frame(Actual = y_test_reg, Predicted = y_pred_lr), 
+             aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(title = "Linear Regression - Predictions vs Actual",
+       x = "Actual Valuation ($B)", y = "Predicted Valuation ($B)") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, ncol = 3)
+```
+
+### Feature Importance
+
+```{r regression-feature-importance}
+# Feature importance for Random Forest
+importance_rf <- importance(rf_reg)
+feature_importance_df <- data.frame(
+  feature = rownames(importance_rf),
+  importance = importance_rf[, "%IncMSE"]
+) %>%
+  arrange(desc(importance))
+
+ggplot(feature_importance_df, aes(x = reorder(feature, importance), y = importance)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Feature Importance - Random Forest Regressor",
+       x = "Feature", y = "Importance (%IncMSE)") +
+  theme_minimal()
+
+kable(feature_importance_df, caption = "Feature Importance for Regression")
+```
+
+## 2. Classification: Predict Financial Stage
+
+### Prepare Data
+
+```{r classification-prep}
+# Prepare data for classification
+df_class <- df_ml %>%
+  filter(!is.na(`Financial Stage`))
+
+X_class <- df_class[, feature_cols]
+y_class <- df_class$Financial_Stage_encoded
+
+# Split data
+set.seed(42)
+train_index_class <- createDataPartition(y_class, p = 0.8, list = FALSE)
+X_train_class <- X_class[train_index_class, ]
+X_test_class <- X_class[-train_index_class, ]
+y_train_class <- y_class[train_index_class]
+y_test_class <- y_class[-train_index_class]
+
+cat("Training set size:", nrow(X_train_class), "\n")
+cat("Test set size:", nrow(X_test_class), "\n")
+cat("Number of classes:", length(unique(y_class)), "\n")
+```
+
+### Random Forest Classifier
+
+```{r rf-classifier}
+# Random Forest Classifier
+set.seed(42)
+rf_clf <- randomForest(x = X_train_class, y = as.factor(y_train_class),
+                       ntree = 100, importance = TRUE)
+
+y_pred_rf_clf <- predict(rf_clf, X_test_class)
+
+cat("Random Forest Classifier:\n")
+print(confusionMatrix(y_pred_rf_clf, as.factor(y_test_class)))
+```
+
+### XGBoost Classifier
+
+```{r xgb-classifier}
+# XGBoost Classifier
+dtrain_class <- xgb.DMatrix(data = as.matrix(X_train_class), 
+                            label = y_train_class)
+dtest_class <- xgb.DMatrix(data = as.matrix(X_test_class), 
+                           label = y_test_class)
+
+set.seed(42)
+xgb_clf <- xgboost(data = dtrain_class, nrounds = 100, 
+                   objective = "multi:softprob", num_class = length(unique(y_class)),
+                   eval_metric = "mlogloss", verbose = 0)
+
+y_pred_xgb_clf <- predict(xgb_clf, dtest_class)
+y_pred_xgb_clf <- matrix(y_pred_xgb_clf, nrow = length(y_test_class), 
+                         ncol = length(unique(y_class)), byrow = TRUE)
+y_pred_xgb_clf <- max.col(y_pred_xgb_clf) - 1
+
+cat("XGBoost Classifier:\n")
+print(confusionMatrix(as.factor(y_pred_xgb_clf), as.factor(y_test_class)))
+```
+
+### Logistic Regression
+
+```{r logistic-regression}
+# Logistic Regression (Multinomial)
+train_data_class <- data.frame(X_train_class, 
+                               Financial_Stage = as.factor(y_train_class))
+
+lr_clf <- nnet::multinom(Financial_Stage ~ ., data = train_data_class, trace = FALSE)
+
+y_pred_lr_clf <- predict(lr_clf, data.frame(X_test_class))
+
+cat("Logistic Regression:\n")
+print(confusionMatrix(y_pred_lr_clf, as.factor(y_test_class)))
+```
+
+### Feature Importance for Classification
+
+```{r classification-feature-importance}
+# Feature importance for Random Forest Classifier
+importance_rf_clf <- importance(rf_clf)
+feature_importance_clf_df <- data.frame(
+  feature = rownames(importance_rf_clf),
+  importance = importance_rf_clf[, "MeanDecreaseGini"]
+) %>%
+  arrange(desc(importance))
+
+ggplot(feature_importance_clf_df, 
+       aes(x = reorder(feature, importance), y = importance)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Feature Importance - Random Forest Classifier",
+       x = "Feature", y = "Importance (MeanDecreaseGini)") +
+  theme_minimal()
+
+kable(feature_importance_clf_df, caption = "Feature Importance for Classification")
+```
+
+## Summary
+
+This analysis demonstrated:
+1. Regression models to predict company valuation
+2. Classification models to predict financial stage
+3. Feature importance analysis
+4. Model evaluation and comparison
+

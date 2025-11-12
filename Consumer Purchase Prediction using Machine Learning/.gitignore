@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data (keep structure but ignore large files)
+# Note: Advertisement.csv is tracked. Please respect the original dataset's license.
+# data/*.csv
+# !data/.gitkeep
+
+# Models (ignore contents but keep directory structure)
+models/*
+!models/.gitkeep
+*.pkl
+*.h5
+*.joblib
+
+# Output (ignore contents but keep directory structure)
+output/*
+!output/.gitkeep
+results/*
+!results/.gitkeep
+*.png
+*.jpg
+*.pdf
+*.html
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.local
+
+# R
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+.Rproj.user/
+
+# Logs
+*.log
+

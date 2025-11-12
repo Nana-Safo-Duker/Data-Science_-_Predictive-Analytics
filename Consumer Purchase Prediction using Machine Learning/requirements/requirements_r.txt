@@ -1,0 +1,31 @@
+# R Requirements for Consumer Purchase Prediction Project
+
+# Data Manipulation
+dplyr
+tidyr
+readr
+
+# Visualization
+ggplot2
+plotly
+corrplot
+VIM
+
+# Statistical Analysis
+stats
+car
+psych
+
+# Machine Learning
+caret
+randomForest
+e1071
+rpart
+rpart.plot
+pROC
+ROCR
+
+# Utilities
+knitr
+rmarkdown
+

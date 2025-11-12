@@ -1,0 +1,27 @@
+name: unicorn_companies
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - r-base=4.3.1
+  - r-essentials
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - scipy
+  - scikit-learn
+  - jupyter
+  - ipykernel
+  - r-irkernel
+  - pip
+  - pip:
+    - plotly
+    - xgboost
+    - lightgbm
+    - statsmodels
+    - tqdm
+    - openpyxl
+    - joblib
+

@@ -1,0 +1,291 @@
+---
+title: "Univariate, Bivariate, and Multivariate Analysis"
+author: "Data Science Team"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 14, fig.height = 10)
+
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readr)
+library(corrplot)
+library(gridExtra)
+library(knitr)
+library(GGally)
+library(plotly)
+library(VIM)
+```
+
+## Objectives
+
+1. Univariate Analysis - Single variable analysis
+2. Bivariate Analysis - Two variable relationships
+3. Multivariate Analysis - Multiple variable relationships
+
+## Load Cleaned Dataset
+
+```{r load-data}
+df <- read_csv("../../data/Unicorn_Companies_cleaned.csv")
+cat("Dataset shape:", nrow(df), "rows,", ncol(df), "columns\n")
+```
+
+## 1. Univariate Analysis
+
+### Valuation Distribution
+
+```{r univariate-valuation}
+# Histogram
+p1 <- ggplot(df, aes(x = Valuation_B)) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Valuations",
+       x = "Valuation ($B)", y = "Frequency") +
+  theme_minimal()
+
+# Box plot
+p2 <- ggplot(df, aes(y = Valuation_B)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7) +
+  labs(title = "Box Plot of Valuations",
+       y = "Valuation ($B)") +
+  theme_minimal()
+
+# Q-Q plot
+p3 <- ggplot(df, aes(sample = Valuation_B)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Q-Q Plot - Normality Test",
+       x = "Theoretical Quantiles", y = "Sample Quantiles") +
+  theme_minimal()
+
+# Log transformation
+p4 <- ggplot(df, aes(x = log1p(Valuation_B))) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "black", alpha = 0.7) +
+  labs(title = "Log-Transformed Distribution of Valuations",
+       x = "Log(Valuation)", y = "Frequency") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+### Categorical Variables
+
+```{r univariate-categorical}
+# Country distribution
+p1 <- df %>%
+  count(Country, sort = TRUE) %>%
+  head(10) %>%
+  ggplot(aes(x = reorder(Country, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Top 10 Countries", x = "Country", y = "Count") +
+  theme_minimal()
+
+# Industry distribution
+p2 <- df %>%
+  count(Industry, sort = TRUE) %>%
+  head(10) %>%
+  ggplot(aes(x = reorder(Industry, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Top 10 Industries", x = "Industry", y = "Count") +
+  theme_minimal()
+
+# Financial Stage distribution
+p3 <- df %>%
+  count(`Financial Stage`) %>%
+  ggplot(aes(x = "", y = n, fill = `Financial Stage`)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  labs(title = "Financial Stage Distribution", fill = "Financial Stage") +
+  theme_void()
+
+# Years to Unicorn distribution
+p4 <- ggplot(df, aes(x = Years_to_Unicorn)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "black", alpha = 0.7) +
+  labs(title = "Years to Unicorn Status",
+       x = "Years", y = "Frequency") +
+  theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+## 2. Bivariate Analysis
+
+### Valuation vs Total Raised
+
+```{r bivariate-valuation-raised}
+p1 <- ggplot(df, aes(x = Total_Raised_B, y = Valuation_B)) +
+  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linetype = "dashed") +
+  labs(title = "Valuation vs Total Raised",
+       x = "Total Raised ($B)", y = "Valuation ($B)") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+
+# Valuation vs Investors Count
+p2 <- ggplot(df, aes(x = `Investors Count`, y = Valuation_B)) +
+  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linetype = "dashed") +
+  labs(title = "Valuation vs Investors Count",
+       x = "Investors Count", y = "Valuation ($B)") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+### Valuation by Country
+
+```{r bivariate-country}
+top_5_countries <- df %>%
+  count(Country, sort = TRUE) %>%
+  head(5) %>%
+  pull(Country)
+
+df %>%
+  filter(Country %in% top_5_countries) %>%
+  ggplot(aes(x = Country, y = Valuation_B)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7) +
+  labs(title = "Valuation Distribution by Country",
+       x = "Country", y = "Valuation ($B)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Valuation by Industry
+
+```{r bivariate-industry}
+top_5_industries <- df %>%
+  count(Industry, sort = TRUE) %>%
+  head(5) %>%
+  pull(Industry)
+
+df %>%
+  filter(Industry %in% top_5_industries) %>%
+  ggplot(aes(x = Industry, y = Valuation_B)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7) +
+  labs(title = "Valuation Distribution by Industry",
+       x = "Industry", y = "Valuation ($B)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Years to Unicorn vs Valuation
+
+```{r bivariate-years}
+ggplot(df, aes(x = Years_to_Unicorn, y = Valuation_B)) +
+  geom_point(alpha = 0.5, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red", linetype = "dashed") +
+  labs(title = "Valuation vs Years to Unicorn Status",
+       x = "Years to Unicorn Status", y = "Valuation ($B)") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+```
+
+## 3. Multivariate Analysis
+
+### Pair Plot
+
+```{r multivariate-pairplot}
+numeric_cols <- c("Valuation_B", "Total_Raised_B", "Investors Count", "Years_to_Unicorn")
+
+df %>%
+  select(all_of(numeric_cols)) %>%
+  na.omit() %>%
+  GGally::ggpairs(title = "Pair Plot of Key Variables")
+```
+
+### Heatmap: Country and Industry
+
+```{r multivariate-heatmap}
+top_countries <- df %>%
+  count(Country, sort = TRUE) %>%
+  head(5) %>%
+  pull(Country)
+
+top_industries <- df %>%
+  count(Industry, sort = TRUE) %>%
+  head(5) %>%
+  pull(Industry)
+
+df %>%
+  filter(Country %in% top_countries, Industry %in% top_industries) %>%
+  group_by(Country, Industry) %>%
+  summarise(Mean_Valuation = mean(Valuation_B, na.rm = TRUE), .groups = "drop") %>%
+  ggplot(aes(x = Industry, y = Country, fill = Mean_Valuation)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red", name = "Mean Valuation ($B)") +
+  labs(title = "Mean Valuation by Country and Industry") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Violin Plot: Country and Financial Stage
+
+```{r multivariate-violin}
+top_3_countries <- df %>%
+  count(Country, sort = TRUE) %>%
+  head(3) %>%
+  pull(Country)
+
+df %>%
+  filter(Country %in% top_3_countries) %>%
+  ggplot(aes(x = Country, y = Valuation_B, fill = `Financial Stage`)) +
+  geom_violin(trim = FALSE, alpha = 0.7) +
+  labs(title = "Valuation Distribution by Country and Financial Stage",
+       x = "Country", y = "Valuation ($B)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "right")
+```
+
+### Correlation Matrix
+
+```{r multivariate-correlation}
+corr_cols <- c("Valuation_B", "Total_Raised_B", "Investors Count", 
+               "Deal Terms", "Portfolio Exits", "Years_to_Unicorn")
+
+corr_matrix <- df %>%
+  select(all_of(corr_cols)) %>%
+  na.omit() %>%
+  cor()
+
+corrplot(corr_matrix, method = "color", type = "upper", 
+         order = "hclust", tl.cex = 0.8, tl.col = "black",
+         addCoef.col = "black", number.cex = 0.7,
+         title = "Correlation Matrix of Numerical Variables")
+```
+
+## Summary
+
+```{r summary}
+cat("Multivariate Summary:\n\n")
+cat("Mean Valuation by Country (Top 10):\n")
+df %>%
+  group_by(Country) %>%
+  summarise(Mean_Valuation = mean(Valuation_B, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(Mean_Valuation)) %>%
+  head(10) %>%
+  kable()
+
+cat("\nMean Valuation by Industry (Top 10):\n")
+df %>%
+  group_by(Industry) %>%
+  summarise(Mean_Valuation = mean(Valuation_B, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(Mean_Valuation)) %>%
+  head(10) %>%
+  kable()
+```
+
+

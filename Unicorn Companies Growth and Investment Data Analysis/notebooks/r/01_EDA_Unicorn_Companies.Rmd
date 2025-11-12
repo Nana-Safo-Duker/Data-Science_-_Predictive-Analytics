@@ -1,0 +1,223 @@
+---
+title: "Exploratory Data Analysis: Unicorn Companies"
+author: "Data Science Team"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, 
+                      fig.width = 12, fig.height = 8)
+
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(readr)
+library(stringr)
+library(lubridate)
+library(VIM)
+library(corrplot)
+library(gridExtra)
+library(knitr)
+```
+
+## Objectives
+
+1. Load and understand the dataset structure
+2. Data cleaning and preprocessing
+3. Missing value analysis
+4. Data type analysis
+5. Basic statistics and summary
+6. Data visualization
+
+## Load Dataset
+
+```{r load-data}
+# Load the dataset
+df <- read_csv("../../data/Unicorn_Companies.csv")
+
+cat("Dataset Shape:", nrow(df), "rows,", ncol(df), "columns\n")
+head(df)
+```
+
+## Dataset Information
+
+```{r dataset-info}
+# Display basic information
+str(df)
+summary(df)
+```
+
+## Missing Value Analysis
+
+```{r missing-values}
+# Check for missing values
+missing_values <- df %>%
+  summarise_all(~sum(is.na(.))) %>%
+  gather(key = "Column", value = "Missing_Count") %>%
+  filter(Missing_Count > 0) %>%
+  arrange(desc(Missing_Count))
+
+missing_percent <- df %>%
+  summarise_all(~sum(is.na(.)) / n() * 100) %>%
+  gather(key = "Column", value = "Missing_Percent") %>%
+  filter(Missing_Percent > 0) %>%
+  arrange(desc(Missing_Percent))
+
+missing_df <- merge(missing_values, missing_percent, by = "Column")
+
+if(nrow(missing_df) > 0) {
+  kable(missing_df, caption = "Missing Values Summary")
+} else {
+  cat("No missing values found!\n")
+}
+```
+
+## Data Cleaning
+
+```{r data-cleaning}
+# Fix column name typo
+df <- df %>% rename(`Select Investors` = `Select Inverstors`)
+
+# Clean Valuation column
+df$Valuation_B <- as.numeric(str_replace_all(df$`Valuation ($B)`, "\\$", ""))
+
+# Clean Total Raised column
+clean_total_raised <- function(val) {
+  if(is.na(val) || val == "None") return(NA)
+  val_str <- str_replace_all(val, "\\$", "")
+  val_str <- str_trim(val_str)
+  
+  if(str_detect(toupper(val_str), "B")) {
+    return(as.numeric(str_replace_all(toupper(val_str), "B", "")))
+  } else if(str_detect(toupper(val_str), "M")) {
+    return(as.numeric(str_replace_all(toupper(val_str), "M", "")) / 1000)
+  } else if(str_detect(toupper(val_str), "K")) {
+    return(as.numeric(str_replace_all(toupper(val_str), "K", "")) / 1000000)
+  } else {
+    return(as.numeric(val_str) / 1000000000)
+  }
+}
+
+df$Total_Raised_B <- sapply(df$`Total Raised`, clean_total_raised)
+
+# Convert Date Joined to date
+df$Date_Joined <- as.Date(df$`Date Joined`, format = "%m/%d/%Y")
+df$Year_Joined <- year(df$Date_Joined)
+
+# Clean Founded Year
+df$Founded_Year <- as.numeric(df$`Founded Year`)
+df$Founded_Year[df$Founded_Year == "None"] <- NA
+
+# Calculate years to unicorn status
+df$Years_to_Unicorn <- df$Year_Joined - df$Founded_Year
+
+cat("Data cleaning completed!\n")
+cat("Cleaned dataset shape:", nrow(df), "rows,", ncol(df), "columns\n")
+```
+
+## Basic Statistical Summary
+
+```{r basic-stats}
+# Numerical columns summary
+numeric_cols <- c("Valuation_B", "Total_Raised_B", "Investors Count", 
+                  "Deal Terms", "Portfolio Exits", "Founded_Year", 
+                  "Year_Joined", "Years_to_Unicorn")
+
+summary(df[numeric_cols])
+```
+
+## Categorical Columns Summary
+
+```{r categorical-stats}
+# Country distribution
+cat("\nTop 10 Countries:\n")
+df %>% count(Country, sort = TRUE) %>% head(10) %>% kable()
+
+# Industry distribution
+cat("\nTop 10 Industries:\n")
+df %>% count(Industry, sort = TRUE) %>% head(10) %>% kable()
+
+# Financial Stage distribution
+cat("\nFinancial Stage Distribution:\n")
+df %>% count(`Financial Stage`, sort = TRUE) %>% kable()
+```
+
+## Data Visualization
+
+### Distribution of Valuations
+
+```{r valuation-distribution}
+p1 <- ggplot(df, aes(x = Valuation_B)) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Company Valuations",
+       x = "Valuation ($B)", y = "Frequency") +
+  theme_minimal()
+
+p2 <- ggplot(df, aes(y = Valuation_B)) +
+  geom_boxplot(fill = "steelblue", alpha = 0.7) +
+  labs(title = "Box Plot of Company Valuations",
+       y = "Valuation ($B)") +
+  theme_minimal()
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+### Top Countries by Number of Unicorns
+
+```{r top-countries}
+df %>%
+  count(Country, sort = TRUE) %>%
+  head(10) %>%
+  ggplot(aes(x = reorder(Country, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Top 10 Countries by Number of Unicorn Companies",
+       x = "Country", y = "Number of Unicorns") +
+  theme_minimal()
+```
+
+### Top Industries
+
+```{r top-industries}
+df %>%
+  count(Industry, sort = TRUE) %>%
+  head(15) %>%
+  ggplot(aes(x = reorder(Industry, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Top 15 Industries by Number of Unicorn Companies",
+       x = "Industry", y = "Number of Unicorns") +
+  theme_minimal()
+```
+
+### Unicorns by Year Joined
+
+```{r unicorns-by-year}
+df %>%
+  filter(!is.na(Year_Joined)) %>%
+  count(Year_Joined) %>%
+  ggplot(aes(x = Year_Joined, y = n)) +
+  geom_line(color = "steelblue", size = 1) +
+  geom_point(color = "steelblue", size = 2) +
+  labs(title = "Number of Unicorn Companies by Year Joined",
+       x = "Year", y = "Number of Unicorns") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank())
+```
+
+## Save Cleaned Dataset
+
+```{r save-cleaned}
+write_csv(df, "../../data/Unicorn_Companies_cleaned.csv")
+cat("Cleaned dataset saved to data/Unicorn_Companies_cleaned.csv\n")
+```
+
+

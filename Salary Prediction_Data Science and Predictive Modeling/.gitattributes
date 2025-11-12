@@ -1,0 +1,37 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout.
+*.csv text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.py text eol=lf
+*.R text eol=lf
+*.Rmd text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.pkl binary
+*.rds binary
+*.zip binary
+*.tar.gz binary
+
+# Jupyter Notebook files
+*.ipynb text eol=lf
+
+# Python
+*.py linguist-language=Python
+*.ipynb linguist-language=Python
+
+# R
+*.R linguist-language=R
+*.Rmd linguist-language=R
+
+

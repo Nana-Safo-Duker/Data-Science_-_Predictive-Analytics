@@ -1,0 +1,41 @@
+# R Package Requirements
+# Install using: install.packages(c("package1", "package2", ...))
+
+# Core Data Science
+tidyverse
+data.table
+readr
+
+# Visualization
+ggplot2
+plotly
+corrplot
+wordcloud
+RColorBrewer
+
+# Text Processing & NLP
+tm
+stringr
+textstem
+syuzhet
+sentimentr
+
+# Machine Learning
+caret
+randomForest
+e1071
+glmnet
+xgboost
+naivebayes
+
+# Statistical Analysis
+corrplot
+psych
+Hmisc
+
+# Utilities
+knitr
+rmarkdown
+IRkernel
+
+
