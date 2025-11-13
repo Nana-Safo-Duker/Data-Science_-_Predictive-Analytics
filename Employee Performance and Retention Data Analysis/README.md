@@ -399,3 +399,6 @@ For questions or suggestions, please open an issue in the repository.
 
 **Note**: This project is for educational and research purposes. Always ensure you have the right to use and analyze the dataset according to its license terms.
 
+---
+*Enhanced with comprehensive workforce performance analytics and retention risk modeling*
+
