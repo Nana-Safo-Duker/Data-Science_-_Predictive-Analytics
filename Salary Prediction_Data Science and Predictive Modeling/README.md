@@ -239,4 +239,7 @@ For questions or suggestions, please open an issue in the repository.
 
 **Note**: This project is designed for educational purposes. For production use, ensure proper data validation, model evaluation, and compliance with data usage policies.
 
+---
+*Enhanced with salary prediction modeling using regression techniques and comprehensive feature analysis*
+
 
