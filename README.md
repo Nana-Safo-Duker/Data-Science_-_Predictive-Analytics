@@ -1,4 +1,4 @@
-# Data Science & Predictive Analytics Portfolio
+# Data Science & Predictive Analytics
 
 This repository curates ten end-to-end analytics projects that span marketing, customer intelligence, cybersecurity, NLP, HR analytics, financial crime, energy, classical machine learning education, compensation science, and venture insights. Every project follows the same blueprint—clean, analyze, model, and communicate—so you can jump into any folder and reproduce the workflow with minimal ramp-up.
 
