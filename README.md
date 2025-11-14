@@ -14,9 +14,13 @@ This repository curates ten end-to-end analytics projects that span marketing, c
 - [License & Data Ethics](#license--data-ethics)
 
 ## About
-- **Maintainer:** Nana Safo Duker  
-- **Website/Portfolio:** [https://nana-safo-duker.github.io/](https://nana-safo-duker.github.io/)  
-- **Mission:** Showcase reproducible data science playbooks that move from raw CSVs to decision-ready insights with transparent, well-documented notebooks in both Python and R.
+**Data Science & Predictive Analytics** is curated by **Nana Safo Duker** as a demonstrable playground of repeatable analytics blueprints.  
+
+- 🌐 **Website / Portfolio:** [https://nana-safo-duker.github.io/](https://nana-safo-duker.github.io/)  
+- 🎯 **Focus:** Transform real datasets into production-ready insights via reproducible EDA, statistical inference, and predictive modeling workflows in both Python and R.  
+- 🧰 **Tooling Philosophy:** Opinionated project scaffolding (data → notebooks → scripts → results) that makes it easy to swap datasets, extend models, or port deliverables into client-facing decks.  
+- 🤝 **Intended Audience:** Analysts, ML engineers, and educators looking for ready-made exemplars covering marketing, operations, cybersecurity, finance, HR, NLP, energy, and startup analytics.  
+- 📈 **Outcomes:** Clear documentation, validated metrics, and visual assets so stakeholders can trace insight provenance from raw CSVs to final recommendations.
 
 ## Repository Highlights
 - Ten standalone case studies, each with datasets, dual-language notebooks, production-ready scripts, and reporting assets.
